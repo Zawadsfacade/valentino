@@ -124,6 +124,7 @@
             position: relative;
             min-height: 150px;
             align-items: center;
+            flex-wrap: wrap;
         }
 
         .btn {
@@ -136,8 +137,12 @@
             cursor: pointer;
             transition: all 0.3s ease;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-            position: absolute;
+            position: relative;
             white-space: nowrap;
+        }
+
+        .btn-moving {
+            position: absolute !important;
         }
 
         .btn-yes {
@@ -420,6 +425,9 @@
 
             const container = btn.closest('.button-container');
             const containerRect = container.getBoundingClientRect();
+            
+            // Add moving class to make it absolute positioned
+            btn.classList.add('btn-moving');
             
             // Calculate random position
             const maxX = containerRect.width - 150; // Button width
