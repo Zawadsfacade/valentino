@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>🐱 Will You Be My Valentine? 💕</title>
     <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;800&family=Bubblegum+Sans&family=Chewy&family=Lilita+One&display=swap" rel="stylesheet">
     <style>
@@ -10,6 +10,7 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
@@ -23,6 +24,7 @@
             animation: gradientFlow 15s ease infinite;
             position: relative;
             overflow-x: hidden;
+            touch-action: manipulation;
         }
 
         @keyframes gradientFlow {
@@ -119,6 +121,9 @@
             justify-content: center;
             gap: 30px;
             margin-top: 30px;
+            position: relative;
+            min-height: 150px;
+            align-items: center;
         }
 
         .btn {
@@ -131,7 +136,8 @@
             cursor: pointer;
             transition: all 0.3s ease;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-            position: relative;
+            position: absolute;
+            white-space: nowrap;
         }
 
         .btn-yes {
@@ -139,7 +145,7 @@
             color: white;
         }
 
-        .btn-yes:hover {
+        .btn-yes:active {
             transform: scale(1.1);
             box-shadow: 0 15px 35px rgba(255, 20, 147, 0.4);
         }
@@ -149,21 +155,15 @@
             color: #666;
         }
 
-        .btn-no:hover {
+        .btn-no:active {
             transform: scale(1.1);
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
         }
 
-        .btn-disabled {
-            background: linear-gradient(135deg, #f0f0f0, #d0d0d0);
-            color: #999;
-            cursor: not-allowed;
-            opacity: 0.6;
-        }
-
-        .btn-disabled:hover {
-            transform: none;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        .btn-static {
+            position: relative !important;
+            left: 0 !important;
+            top: 0 !important;
         }
 
         /* Animations for enthusiastic cat */
@@ -252,9 +252,10 @@
             box-shadow: 0 5px 15px rgba(255, 105, 180, 0.3);
             z-index: 1000;
             transition: all 0.3s ease;
+            touch-action: manipulation;
         }
 
-        .music-control:hover {
+        .music-control:active {
             transform: scale(1.05);
             box-shadow: 0 8px 20px rgba(255, 105, 180, 0.4);
         }
@@ -279,7 +280,7 @@
             
             .button-container {
                 gap: 15px;
-                flex-wrap: wrap;
+                min-height: 120px;
             }
             
             .cat-emoji {
@@ -314,6 +315,10 @@
         let currentPage = 1;
         let musicPlaying = true;
         let soundsLoaded = false;
+
+        // Detect if device is mobile
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+                         ('ontouchstart' in window);
 
         // Music controls
         function playBackgroundMusic() {
@@ -408,6 +413,57 @@
             setTimeout(() => sparkleContainer.remove(), 1000);
         }
 
+        // Move button away - works for both mouse and touch
+        function moveButton(btnId) {
+            const btn = document.getElementById(btnId);
+            if (!btn) return;
+
+            const container = btn.closest('.button-container');
+            const containerRect = container.getBoundingClientRect();
+            
+            // Calculate random position
+            const maxX = containerRect.width - 150; // Button width
+            const maxY = 100;
+
+            let newX = Math.random() * maxX - maxX/2;
+            let newY = (Math.random() - 0.5) * maxY;
+
+            btn.style.left = newX + 'px';
+            btn.style.top = newY + 'px';
+            btn.style.transition = 'all 0.3s ease';
+
+            playCatMeow();
+        }
+
+        // Setup button with touch/click handlers
+        function setupMovingButton(btnId) {
+            setTimeout(() => {
+                const btn = document.getElementById(btnId);
+                if (!btn) return;
+
+                // For mobile: move on touch, but allow click after 3 failed attempts
+                let touchCount = 0;
+                
+                const handleInteraction = (e) => {
+                    e.preventDefault();
+                    touchCount++;
+                    
+                    if (touchCount <= 3) {
+                        moveButton(btnId);
+                    } else {
+                        // After 3 attempts, let them click it
+                        return true;
+                    }
+                };
+
+                if (isMobile) {
+                    btn.addEventListener('touchstart', handleInteraction, { passive: false });
+                } else {
+                    btn.addEventListener('mouseenter', () => moveButton(btnId));
+                }
+            }, 100);
+        }
+
         // Page 1: Initial question
         function showPage1() {
             currentPage = 1;
@@ -417,11 +473,12 @@
                 <h1>Sumaiya Tasnim Chowdhury Hossain Mithil</h1>
                 <div class="question">Will You Be My Valentine?</div>
                 <div class="button-container">
-                    <button class="btn btn-yes" id="yesBtn1" onmouseenter="moveButton(event, 'yesBtn1')">Yes 💕</button>
-                    <button class="btn btn-no" onclick="goToPage2()">No 😿</button>
+                    <button class="btn btn-yes" id="yesBtn1">Yes 💕</button>
+                    <button class="btn btn-no btn-static" onclick="goToPage2()">No 😿</button>
                 </div>
             `;
             container.classList.add('fade-in');
+            setupMovingButton('yesBtn1');
         }
 
         // Page 2: First sad question - YES BUTTON MOVES AWAY
@@ -436,11 +493,12 @@
                     <div class="cat-emoji sad-cat">😿</div>
                     <div class="question">Is it because I didn't get you flowers last time?</div>
                     <div class="button-container">
-                        <button class="btn btn-yes" id="yesBtn2" onmouseenter="moveButton(event, 'yesBtn2')">Yes 🥀</button>
-                        <button class="btn btn-no" onclick="goToPage3()">No 🌸</button>
+                        <button class="btn btn-yes" id="yesBtn2">Yes 🥀</button>
+                        <button class="btn btn-no btn-static" onclick="goToPage3()">No 🌸</button>
                     </div>
                 `;
                 container.classList.add('fade-in');
+                setupMovingButton('yesBtn2');
             }, 100);
         }
 
@@ -456,11 +514,12 @@
                     <div class="cat-emoji sad-cat">😢</div>
                     <div class="question">Is it because of that silly Valentine's video I sent of those Black Guys dancing with your name?</div>
                     <div class="button-container">
-                        <button class="btn btn-yes" onclick="goToPage4()">Yes 📹</button>
-                        <button class="btn btn-no" id="noBtn3" onmouseenter="moveButton(event, 'noBtn3')">No 💃</button>
+                        <button class="btn btn-yes btn-static" onclick="goToPage4()">Yes 📹</button>
+                        <button class="btn btn-no" id="noBtn3">No 💃</button>
                     </div>
                 `;
                 container.classList.add('fade-in');
+                setupMovingButton('noBtn3');
             }, 100);
         }
 
@@ -486,11 +545,12 @@
                             <div class="cat-emoji enthusiastic-cat">😸</div>
                             <div class="question">What if I give you lots of chocolates and flowers?</div>
                             <div class="button-container">
-                                <button class="btn btn-yes" id="yesBtn4" onmouseenter="moveButton(event, 'yesBtn4')">Yes 🍫</button>
-                                <button class="btn btn-no" onclick="goToPage5()">No 🌹</button>
+                                <button class="btn btn-yes" id="yesBtn4">Yes 🍫</button>
+                                <button class="btn btn-no btn-static" onclick="goToPage5()">No 🌹</button>
                             </div>
                         `;
                         container.classList.add('fade-in');
+                        setupMovingButton('yesBtn4');
                     }, 100);
                 }, 2000);
             }, 100);
@@ -508,11 +568,12 @@
                     <div class="cat-emoji enthusiastic-cat">😻</div>
                     <div class="question">What if I give you lots and lots and lots of chocolates and flowers? Will you please be my valentine Sumaiya Tasnim Chowdhury Hossain Mithil please please pleaseeee?</div>
                     <div class="button-container">
-                        <button class="btn btn-yes" onclick="goToPage6(event)">Yes!!! 💝</button>
-                        <button class="btn btn-no" id="noBtn5" onmouseenter="moveButton(event, 'noBtn5')">No 🎁</button>
+                        <button class="btn btn-yes btn-static" onclick="goToPage6(event)">Yes!!! 💝</button>
+                        <button class="btn btn-no" id="noBtn5">No 🎁</button>
                     </div>
                 `;
                 container.classList.add('fade-in');
+                setupMovingButton('noBtn5');
             }, 100);
         }
 
@@ -529,47 +590,6 @@
                 `;
                 container.classList.add('fade-in');
             }, 100);
-        }
-
-        // Move button away from cursor
-        function moveButton(event, btnId) {
-            event.preventDefault();
-            const btn = document.getElementById(btnId);
-            if (!btn) return;
-
-            const container = btn.closest('.button-container');
-            const containerRect = container.getBoundingClientRect();
-            const btnRect = btn.getBoundingClientRect();
-
-            // Calculate random position within safe bounds
-            const maxX = containerRect.width - btnRect.width;
-            const maxY = 100; // Limited vertical movement
-
-            let newX = Math.random() * maxX;
-            let newY = (Math.random() - 0.5) * maxY;
-
-            // Make sure button doesn't overlap with the other button
-            const otherBtn = btn.classList.contains('btn-yes') ? 
-                container.querySelector('.btn-no') : 
-                container.querySelector('.btn-yes');
-            
-            if (otherBtn) {
-                const otherRect = otherBtn.getBoundingClientRect();
-                const btnCenterX = btnRect.left + btnRect.width / 2;
-                const otherCenterX = otherRect.left + otherRect.width / 2;
-                
-                // If buttons would be too close, move in opposite direction
-                if (Math.abs(newX - (otherCenterX - containerRect.left)) < btnRect.width) {
-                    newX = btnCenterX < otherCenterX ? 0 : maxX;
-                }
-            }
-
-            btn.style.position = 'relative';
-            btn.style.left = newX - (btnRect.left - containerRect.left) + 'px';
-            btn.style.top = newY + 'px';
-            btn.style.transition = 'all 0.3s ease';
-
-            playCatMeow();
         }
 
         // Navigation functions
@@ -595,7 +615,8 @@
         
         function goToPage6(event) {
             if (event) {
-                createSparkles(event.clientX, event.clientY);
+                createSparkles(event.clientX || event.touches[0].clientX, 
+                              event.clientY || event.touches[0].clientY);
             }
             playHappyCatSong();
             showPage6();
@@ -614,7 +635,6 @@
             if (musicPlaying && music.paused) {
                 music.play();
             }
-            // Preload all sounds
             if (!soundsLoaded) {
                 ['cuteCatSound', 'happyCatSong'].forEach(id => {
                     const audio = document.getElementById(id);
@@ -626,7 +646,15 @@
             }
         }, { once: true });
 
-        // Keep background music playing even when page is not focused
+        // Mobile-specific: play music on touch
+        document.addEventListener('touchstart', function initMusicTouch() {
+            const music = document.getElementById('bgMusic');
+            if (musicPlaying && music.paused) {
+                music.play();
+            }
+        }, { once: true });
+
+        // Keep background music playing
         document.addEventListener('visibilitychange', () => {
             const music = document.getElementById('bgMusic');
             if (!document.hidden && musicPlaying && music.paused) {
