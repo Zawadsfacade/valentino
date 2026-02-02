@@ -306,7 +306,7 @@
     </div>
 
     <!-- Audio elements -->
-    <audio id="bgMusic" loop>
+    <audio id="bgMusic" loop autoplay>
         <source src="bensound-cute.mp3" type="audio/mpeg">
     </audio>
     <audio id="cuteCatSound">
@@ -329,8 +329,13 @@
         function playBackgroundMusic() {
             const music = document.getElementById('bgMusic');
             music.volume = 0.3;
-            music.play().catch(e => {
-                console.log('Autoplay prevented, will play on first interaction');
+            // Try to play immediately
+            music.play().then(() => {
+                console.log('Music started automatically');
+            }).catch(e => {
+                console.log('Autoplay blocked, trying alternate methods');
+                // Try again after a tiny delay
+                setTimeout(() => music.play().catch(() => {}), 100);
             });
         }
 
@@ -449,24 +454,21 @@
                 const btn = document.getElementById(btnId);
                 if (!btn) return;
 
-                // For mobile: move on touch, but allow click after 3 failed attempts
-                let touchCount = 0;
-                
+                // Move on every tap/touch - no click limit
                 const handleInteraction = (e) => {
-                    e.preventDefault();
-                    touchCount++;
-                    
-                    if (touchCount <= 3) {
-                        moveButton(btnId);
-                    } else {
-                        // After 3 attempts, let them click it
-                        return true;
-                    }
+                    // Only prevent default and move if it's a touch/tap
+                    // Don't prevent the actual click from going through
+                    moveButton(btnId);
                 };
 
                 if (isMobile) {
-                    btn.addEventListener('touchstart', handleInteraction, { passive: false });
+                    // On mobile: move the button on touchstart
+                    btn.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        moveButton(btnId);
+                    }, { passive: false });
                 } else {
+                    // On desktop: move on mouse enter
                     btn.addEventListener('mouseenter', () => moveButton(btnId));
                 }
             }, 100);
@@ -634,7 +636,21 @@
         window.addEventListener('load', () => {
             createFloatingHearts();
             showPage1();
+            
+            // Start music immediately
+            const music = document.getElementById('bgMusic');
+            music.volume = 0.3;
             playBackgroundMusic();
+            
+            // Also try to start on first interaction of any kind
+            const startMusic = () => {
+                if (music.paused) {
+                    music.play().catch(e => console.log('Music play failed'));
+                }
+            };
+            
+            document.addEventListener('click', startMusic, { once: true });
+            document.addEventListener('touchstart', startMusic, { once: true });
         });
 
         // Ensure music plays on first user interaction
